@@ -14,8 +14,8 @@ with psycopg2.connect(DATABASE_URL) as conn:
             CREATE TABLE IF NOT EXISTS urls (
                 id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
                 name VARCHAR(255),
-                created_at DATE
-            )
+                created_at DATE NOT NULL DEFAULT CURRENT_DATE
+            );
         """)
 
 @app.route("/")
