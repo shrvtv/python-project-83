@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, url_for, abort
 import os
 from dotenv import load_dotenv
 import psycopg2
@@ -22,6 +22,24 @@ with psycopg2.connect(DATABASE_URL) as conn:
 def index():
     return render_template("index.html")
 
-@app.route("/urls")
+@app.get("/urls")
 def urls():
     return render_template("urls.html")
+
+@app.route("/urls/<int:website_id>")
+def website(website_id):
+    if website_id:
+        abort(404)
+
+@app.post("/urls")
+def add_url():
+    url = request.args.get('url')
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO urls (name)
+                VALUES (%s)
+                RETURNING id;
+            """, (url,))
+            website_id = cur.fetchone()[0]
+    return redirect(url_for("website", website_id=website_id))
