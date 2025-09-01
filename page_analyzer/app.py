@@ -34,8 +34,16 @@ def urls():
 
 @app.route("/urls/<int:website_id>")
 def website(website_id):
-    if website_id:
-        abort(404)
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+            cur.execute(
+                "SELECT id, name, created_at FROM urls WHERE id = %s",
+                (website_id,)
+            )
+            website = cur.fetchone()
+    if website:
+        return render_template("website.html", website=website)
+    abort(404)
 
 @app.post("/urls")
 def add_url():
