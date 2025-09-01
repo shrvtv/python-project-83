@@ -3,6 +3,7 @@ from validators.url import url as is_valid_url
 import os
 from dotenv import load_dotenv
 import psycopg2
+from psycopg2.extras import NamedTupleCursor
 
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -14,7 +15,7 @@ with psycopg2.connect(DATABASE_URL) as conn:
         cur.execute("""
             CREATE TABLE IF NOT EXISTS urls (
                 id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                name VARCHAR(255),
+                name VARCHAR(255) UNIQUE,
                 created_at DATE NOT NULL DEFAULT CURRENT_DATE
             );
         """)
@@ -35,16 +36,21 @@ def website(website_id):
 @app.post("/urls")
 def add_url():
     url = request.form.get('url')
-    if is_valid_url(url) and len(url) <= 255:
-        with psycopg2.connect(DATABASE_URL) as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    INSERT INTO urls (name)
-                    VALUES (%s)
-                    RETURNING id;
-                """, (url,))
-                website_id = cur.fetchone()[0]
-        return redirect(url_for("website", website_id=website_id))
-    else:
+    if not (is_valid_url(url) and len(url) <= 255):
         flash("Некорректный URL")
         return render_template(url_for("index"))
+
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+            cur.execute("SELECT * FROM urls WHERE name = %s", (url,))
+            url_exists = cur.fetchone() is not None
+
+        if not url_exists:
+            with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+                cur.execute("INSERT INTO urls (name) VALUES (%s)", (url,))
+
+        with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+            cur.execute("SELECT id FROM urls WHERE name = %s", (url,))
+            website_id = cur.fetchone().id
+    return redirect(url_for("website", website_id=website_id))
+        
