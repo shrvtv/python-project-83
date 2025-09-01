@@ -26,7 +26,11 @@ def index():
 
 @app.get("/urls")
 def urls():
-    return render_template("urls.html")
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+            cur.execute("SELECT id, name FROM urls ORDER BY id DESC")
+            rows = cur.fetchall()
+    return render_template("urls.html", rows=rows)
 
 @app.route("/urls/<int:website_id>")
 def website(website_id):

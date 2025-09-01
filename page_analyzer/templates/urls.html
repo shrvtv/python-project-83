@@ -32,6 +32,18 @@
               </tr>
             </thead>
             <tbody>
+              {% for row in rows %}
+              <tr>
+                <td>
+                  {{row.id}}
+                </td>
+                <td>
+                  <a href="{{url_for('website', website_id=row.id)}}">{{row.name}}</a>
+                </td>
+                <td></td>
+                <td></td>
+              </tr>
+              {% endfor %}
             </tbody>
           </table>
         </div>
