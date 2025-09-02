@@ -67,7 +67,7 @@ def website(url_id):
                 FROM url_checks WHERE url_id = %s
                 ORDER BY id DESC;
                 """,
-                (website.id,)
+                (url_id,)
             )
             checks = cur.fetchall()
     return render_template("website.html", website=website, checks=checks)
