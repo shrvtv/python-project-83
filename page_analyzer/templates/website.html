@@ -1,20 +1,20 @@
 {% extends "layout.html" %}
 {% block content %}
-<h1>Сайт: {{website.name}}</h1>
+<h1>Сайт: {{ website.name} }</h1>
 <div class="table-responsive">
    <table class="table table-bordered table-hover text-nowrap" data-test="url">
       <tbody>
          <tr>
             <td>ID</td>
-            <td>{{website.id}}</td>
+            <td>{{ website.id }}</td>
          </tr>
          <tr>
             <td>Имя</td>
-            <td>{{website.name}}</td>
+            <td>{{ website.name }}</td>
          </tr>
          <tr>
             <td>Дата создания</td>
-            <td>{{website.created_at}}</td>
+            <td>{{ website.created_at }}</td>
          </tr>
       </tbody>
    </table>
