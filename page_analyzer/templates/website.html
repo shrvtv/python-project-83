@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
-<h1>Сайт: {{ website.name} }</h1>
+<h1>Сайт: {{ website.name }}</h1>
 <div class="table-responsive">
    <table class="table table-bordered table-hover text-nowrap" data-test="url">
       <tbody>
@@ -36,6 +36,16 @@
          </tr>
       </thead>
       <tbody>
+         {% for check in checks %}
+         <tr>
+            <td>{{ check.id }}</td>
+            <td>{{ check.status_code or '' }}</td>
+            <td>{{ check.h1 or  '' }}</td>
+            <td>{{ check.title or '' }}</td>
+            <td>{{ check.description or '' }}</td>
+            <td>{{ check.created_at }}</td>
+         </tr>
+         {% endfor %}
       </tbody>
    </table>
 </div>

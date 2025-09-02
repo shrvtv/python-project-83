@@ -94,3 +94,15 @@ def add_url():
             cur.execute("SELECT id FROM urls WHERE name = %s;", (url,))
             url_id = cur.fetchone().id
     return redirect(url_for("website", url_id=url_id))
+
+
+@app.post('/urls/<int:url_id>/checks')
+def check(url_id):
+    with psycopg2.connect(DATABASE_URL) as conn:
+        init_db(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO url_checks (url_id) VALUES (%s);",
+                (url_id,)
+            )
+    return redirect(url_for('website', url_id=url_id))
