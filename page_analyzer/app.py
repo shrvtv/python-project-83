@@ -32,13 +32,13 @@ def urls():
             rows = cur.fetchall()
     return render_template("urls.html", rows=rows)
 
-@app.route("/urls/<int:website_id>")
-def website(website_id):
+@app.route("/urls/<int:url_id>")
+def website(url_id):
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
             cur.execute(
                 "SELECT id, name, created_at FROM urls WHERE id = %s;",
-                (website_id,)
+                (url_id,)
             )
             website = cur.fetchone()
     if website:
