@@ -24,6 +24,7 @@ with psycopg2.connect(DATABASE_URL) as conn:
 def index():
     return render_template("index.html")
 
+
 @app.get("/urls")
 def urls():
     with psycopg2.connect(DATABASE_URL) as conn:
@@ -31,6 +32,7 @@ def urls():
             cur.execute("SELECT id, name FROM urls ORDER BY id DESC;")
             rows = cur.fetchall()
     return render_template("urls.html", rows=rows)
+
 
 @app.route("/urls/<int:url_id>")
 def website(url_id):
@@ -44,6 +46,7 @@ def website(url_id):
     if website:
         return render_template("website.html", website=website)
     abort(404)
+
 
 @app.post("/urls")
 def add_url():
