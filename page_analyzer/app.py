@@ -28,7 +28,7 @@ def index():
 def urls():
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
-            cur.execute("SELECT id, name FROM urls ORDER BY id DESC")
+            cur.execute("SELECT id, name FROM urls ORDER BY id DESC;")
             rows = cur.fetchall()
     return render_template("urls.html", rows=rows)
 
@@ -37,7 +37,7 @@ def website(website_id):
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
             cur.execute(
-                "SELECT id, name, created_at FROM urls WHERE id = %s",
+                "SELECT id, name, created_at FROM urls WHERE id = %s;",
                 (website_id,)
             )
             website = cur.fetchone()
@@ -54,15 +54,15 @@ def add_url():
 
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
-            cur.execute("SELECT * FROM urls WHERE name = %s", (url,))
+            cur.execute("SELECT * FROM urls WHERE name = %s;", (url,))
             url_exists = cur.fetchone() is not None
 
         if not url_exists:
             with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
-                cur.execute("INSERT INTO urls (name) VALUES (%s)", (url,))
+                cur.execute("INSERT INTO urls (name) VALUES (%s);", (url,))
 
         with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
-            cur.execute("SELECT id FROM urls WHERE name = %s", (url,))
+            cur.execute("SELECT id FROM urls WHERE name = %s;", (url,))
             website_id = cur.fetchone().id
     return redirect(url_for("website", website_id=website_id))
         
