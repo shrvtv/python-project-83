@@ -1,6 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, abort, flash
+from flask import (
+    Flask, render_template, request, redirect, url_for, abort, flash
+)
 from validators.url import url as is_valid_url
 import os
+import requests
 from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extras import NamedTupleCursor
@@ -63,7 +66,8 @@ def website(url_id):
             abort(404)
         with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
             cur.execute("""
-                SELECT id, url_id, status_code, h1, title, description, created_at
+                SELECT id, url_id, status_code, h1,
+                       title, description, created_at
                 FROM url_checks WHERE url_id = %s
                 ORDER BY id DESC;
                 """,
@@ -100,9 +104,21 @@ def add_url():
 def check(url_id):
     with psycopg2.connect(DATABASE_URL) as conn:
         init_db(conn)
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO url_checks (url_id) VALUES (%s);",
-                (url_id,)
-            )
+        with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+            cur.execute("SELECT name FROM urls WHERE id = %s;", (url_id,))
+            url = cur.fetchone().name
+        
+        try:
+            r = requests.get(url)
+            r.raise_for_status()
+        except requests.exceptions.RequestException:
+            flash("Произошла ошибка при проверке")
+        else:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO url_checks (url_id, status_code)
+                    VALUES (%s, %s);
+                    """,
+                    (url_id, r.status_code)
+                )
     return redirect(url_for('website', url_id=url_id))
