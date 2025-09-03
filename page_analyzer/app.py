@@ -39,7 +39,7 @@ def init_db(conn):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", url='')
 
 
 @app.get("/urls")
@@ -81,8 +81,8 @@ def website(url_id):
 def add_url():
     url = request.form.get('url')
     if not (is_valid_url(url) and len(url) <= 255):
-        flash("Некорректный URL")
-        return render_template(url_for("index"))
+        flash("Некорректный URL", "danger")
+        return render_template("index.html", url=url)
 
     with psycopg2.connect(DATABASE_URL) as conn:
         init_db(conn)
@@ -97,6 +97,7 @@ def add_url():
         with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
             cur.execute("SELECT id FROM urls WHERE name = %s;", (url,))
             url_id = cur.fetchone().id
+        flash("Страница успешно добавлена", "success")
     return redirect(url_for("website", url_id=url_id))
 
 
@@ -112,7 +113,7 @@ def check(url_id):
             r = requests.get(url)
             r.raise_for_status()
         except requests.exceptions.RequestException:
-            flash("Произошла ошибка при проверке")
+            flash("Произошла ошибка при проверке", "danger")
         else:
             with conn.cursor() as cur:
                 cur.execute("""
