@@ -20,7 +20,9 @@ def init_db(conn):
             CREATE TABLE IF NOT EXISTS urls (
                 id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
                 name VARCHAR(255) UNIQUE NOT NULL,
-                created_at DATE NOT NULL DEFAULT CURRENT_DATE
+                created_at DATE NOT NULL DEFAULT CURRENT_DATE,
+                last_check DATE,
+                last_status_code SMALLINT
             );
         """)
     with conn.cursor() as cur:
@@ -47,7 +49,11 @@ def urls():
     with psycopg2.connect(DATABASE_URL) as conn:
         init_db(conn)
         with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
-            cur.execute("SELECT id, name FROM urls ORDER BY id DESC;")
+            cur.execute("""
+                SELECT id, name, last_check, last_status_code
+                FROM urls
+                ORDER BY id DESC
+            """)
             rows = cur.fetchall()
     return render_template("urls.html", rows=rows)
 
@@ -115,11 +121,22 @@ def check(url_id):
         except requests.exceptions.RequestException:
             flash("Произошла ошибка при проверке", "danger")
         else:
+            status_code = r.status_code
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO url_checks (url_id, status_code)
-                    VALUES (%s, %s);
+                    VALUES (%s, %s)
+                    RETURNING created_at;
                     """,
-                    (url_id, r.status_code)
+                    (url_id, status_code)
+                )
+                last_check = cur.fetchone()[0]
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE urls
+                    SET last_check = %s, last_status_code = %s
+                    WHERE id = %s;
+                    """,
+                    (last_check, status_code, url_id)
                 )
     return redirect(url_for('website', url_id=url_id))
