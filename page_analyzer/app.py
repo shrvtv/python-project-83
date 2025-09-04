@@ -6,6 +6,7 @@ import os
 import requests
 from dotenv import load_dotenv
 import psycopg2
+import page_analyzer.utils as utils
 from psycopg2.extras import NamedTupleCursor
 
 load_dotenv()
@@ -122,13 +123,25 @@ def check(url_id):
             flash("Произошла ошибка при проверке", "danger")
         else:
             status_code = r.status_code
+            raw_html = r.text
+            h1 = utils.extract_tag_value(raw_html, 'h1')
+            title = utils.extract_tag_value(raw_html, 'title')
+            description = utils.extract_tag_attribute_value(
+                raw_html=raw_html,
+                tag='meta',
+                attribute='content',
+                required_attributes={
+                    'name': 'description'
+                })
+
             with conn.cursor() as cur:
                 cur.execute("""
-                    INSERT INTO url_checks (url_id, status_code)
-                    VALUES (%s, %s)
+                    INSERT INTO url_checks
+                    (url_id, status_code, h1, title, description)
+                    VALUES (%s, %s, %s, %s, %s)
                     RETURNING created_at;
                     """,
-                    (url_id, status_code)
+                    (url_id, status_code, h1, title, description)
                 )
                 last_check = cur.fetchone()[0]
             with conn.cursor() as cur:
