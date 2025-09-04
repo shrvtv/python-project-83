@@ -41,8 +41,8 @@ def website(url_id):
                 "SELECT id, name, created_at FROM urls WHERE id = %s;",
                 (url_id,)
             )
-            website = cur.fetchone()
-        if website is None:
+            row = cur.fetchone()
+        if row is None:
             abort(404)
         with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
             cur.execute("""
@@ -54,7 +54,7 @@ def website(url_id):
                 (url_id,)
             )
             checks = cur.fetchall()
-    return render_template("website.html", website=website, checks=checks)
+    return render_template("website.html", website=row, checks=checks)
 
 
 @app.post("/urls")
