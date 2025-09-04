@@ -66,17 +66,22 @@ def add_url():
 
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT * FROM urls WHERE name = %s;", (url,))
-            url_exists = cur.fetchone() is not None
-
-        if not url_exists:
-            with conn.cursor() as cur:
-                cur.execute("INSERT INTO urls (name) VALUES (%s);", (url,))
-
-        with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
             cur.execute("SELECT id FROM urls WHERE name = %s;", (url,))
-            url_id = cur.fetchone().id
-        flash("Страница успешно добавлена", "success")
+            row = cur.fetchone()
+        if row:
+            url_id = row[0]
+            flash("Страница уже существует", "info")
+        else:
+            cur.execute("""
+                INSERT INTO urls (name)
+                VALUES (%s)
+                RETURNING id;
+                """,
+                (url,)
+            )
+            url_id = cur.fetchone()[0]
+            flash("Страница успешно добавлена", "success")
+
     return redirect(url_for("website", url_id=url_id))
 
 
