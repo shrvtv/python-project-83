@@ -5,6 +5,7 @@ description = "Analyze web pages"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "beautifulsoup4>=4.13.5",
     "flask>=3.1.2",
     "gunicorn>=23.0.0",
     "psycopg2-binary>=2.9.10",
