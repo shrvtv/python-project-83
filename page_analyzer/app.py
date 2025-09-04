@@ -15,31 +15,6 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 
-def init_db(conn):
-    with conn.cursor() as cur:
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS urls (
-                id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                name VARCHAR(255) UNIQUE NOT NULL,
-                created_at DATE NOT NULL DEFAULT CURRENT_DATE,
-                last_check DATE,
-                last_status_code SMALLINT
-            );
-        """)
-    with conn.cursor() as cur:
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS url_checks (
-                id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                url_id BIGINT REFERENCES urls(id) ON DELETE CASCADE NOT NULL,
-                status_code SMALLINT,
-                h1 VARCHAR(255),
-                title VARCHAR(255),
-                description TEXT,
-                created_at DATE NOT NULL DEFAULT CURRENT_DATE
-            );
-        """)
-
-
 @app.route("/")
 def index():
     return render_template("index.html", url='')
@@ -48,7 +23,6 @@ def index():
 @app.get("/urls")
 def urls():
     with psycopg2.connect(DATABASE_URL) as conn:
-        init_db(conn)
         with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
             cur.execute("""
                 SELECT id, name, last_check, last_status_code
@@ -62,7 +36,6 @@ def urls():
 @app.route("/urls/<int:url_id>")
 def website(url_id):
     with psycopg2.connect(DATABASE_URL) as conn:
-        init_db(conn)
         with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
             cur.execute(
                 "SELECT id, name, created_at FROM urls WHERE id = %s;",
@@ -92,7 +65,6 @@ def add_url():
         return render_template("index.html", url=url)
 
     with psycopg2.connect(DATABASE_URL) as conn:
-        init_db(conn)
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM urls WHERE name = %s;", (url,))
             url_exists = cur.fetchone() is not None
@@ -111,7 +83,6 @@ def add_url():
 @app.post('/urls/<int:url_id>/checks')
 def check(url_id):
     with psycopg2.connect(DATABASE_URL) as conn:
-        init_db(conn)
         with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
             cur.execute("SELECT name FROM urls WHERE id = %s;", (url_id,))
             url = cur.fetchone().name
