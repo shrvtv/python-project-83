@@ -120,6 +120,7 @@ def check(url_id):
                     """,
                     (url_id, status_code, h1, title, description)
                 )
+                flash("Страница успешно проверена", "success")
                 last_check = cur.fetchone()[0]
             with conn.cursor() as cur:
                 cur.execute("""
