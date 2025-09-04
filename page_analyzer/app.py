@@ -72,14 +72,15 @@ def add_url():
             url_id = row[0]
             flash("Страница уже существует", "info")
         else:
-            cur.execute("""
-                INSERT INTO urls (name)
-                VALUES (%s)
-                RETURNING id;
-                """,
-                (url,)
-            )
-            url_id = cur.fetchone()[0]
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO urls (name)
+                    VALUES (%s)
+                    RETURNING id;
+                    """,
+                    (url,)
+                )
+                url_id = cur.fetchone()[0]
             flash("Страница успешно добавлена", "success")
 
     return redirect(url_for("website", url_id=url_id))
