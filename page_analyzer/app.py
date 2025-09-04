@@ -62,7 +62,7 @@ def add_url():
     url = request.form.get('url')
     if not (is_valid_url(url) and len(url) <= 255):
         flash("Некорректный URL", "danger")
-        return render_template("index.html", url=url)
+        return render_template("index.html", url=url), 422
 
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cur:
