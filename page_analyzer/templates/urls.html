@@ -12,19 +12,19 @@
       </tr>
     </thead>
     <tbody>
-      {% for row in rows %}
+      {% for url in urls %}
       <tr>
         <td>
-          {{ row.id }}
+          {{ url.id }}
         </td>
         <td>
-          <a href="{{ url_for('website', url_id=row.id) }}">{{ row.name }}</a>
+          <a href="{{ url_for('website', url_id=url.id) }}">{{ row.name }}</a>
         </td>
         <td>
-          {{ row.last_check or '' }}
+          {{ url.last_check or '' }}
         </td>
         <td>
-          {{ row.last_status_code or '' }}
+          {{ url.last_status_code or '' }}
         </td>
       </tr>
       {% endfor %}

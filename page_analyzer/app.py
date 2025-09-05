@@ -25,15 +25,8 @@ def index():
 
 @app.get("/urls")
 def urls():
-    with psycopg2.connect(DATABASE_URL) as conn:
-        with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
-            cur.execute("""
-                SELECT id, name, last_check, last_status_code
-                FROM urls
-                ORDER BY id DESC
-            """)
-            rows = cur.fetchall()
-    return render_template("urls.html", rows=rows)
+    urls = repo.get_all_urls()()
+    return render_template("urls.html", urls=urls)
 
 
 @app.route("/urls/<int:url_id>")
@@ -70,36 +63,33 @@ def add_url():
     if url:
         flash("Страница уже существует", "info")
     else:
-        url = repo.save(url)
+        url = repo.save(name)
         flash("Страница успешно добавлена", "success")
     return redirect(url_for("website", url_id=url.id))
 
 
 @app.post('/urls/<int:url_id>/checks')
 def check(url_id):
-    with psycopg2.connect(DATABASE_URL) as conn:
-        with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
-            cur.execute("SELECT name FROM urls WHERE id = %s;", (url_id,))
-            url = cur.fetchone().name
-        
-        try:
-            r = requests.get(url)
-            r.raise_for_status()
-        except requests.exceptions.RequestException:
-            flash("Произошла ошибка при проверке", "danger")
-        else:
-            status_code = r.status_code
-            raw_html = r.text
-            h1 = utils.extract_tag_value(raw_html, 'h1')
-            title = utils.extract_tag_value(raw_html, 'title')
-            description = utils.extract_tag_attribute_value(
-                raw_html=raw_html,
-                tag='meta',
-                attribute='content',
-                required_attributes={
-                    'name': 'description'
-                })
+    url = repo.find_by_id(url_id)
+    try:
+        r = requests.get(url.name)
+        r.raise_for_status()
+    except requests.exceptions.RequestException:
+        flash("Произошла ошибка при проверке", "danger")
+    else:
+        status_code = r.status_code
+        raw_html = r.text
+        h1 = utils.extract_tag_value(raw_html, 'h1')
+        title = utils.extract_tag_value(raw_html, 'title')
+        description = utils.extract_tag_attribute_value(
+            raw_html=raw_html,
+            tag='meta',
+            attribute='content',
+            required_attributes={
+                'name': 'description'
+            })
 
+        with conn:
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO url_checks
@@ -107,16 +97,13 @@ def check(url_id):
                     VALUES (%s, %s, %s, %s, %s)
                     RETURNING created_at;
                     """,
-                    (url_id, status_code, h1, title, description)
+                    (url.id, status_code, h1, title, description)
                 )
                 flash("Страница успешно проверена", "success")
                 last_check = cur.fetchone()[0]
-            with conn.cursor() as cur:
-                cur.execute("""
-                    UPDATE urls
-                    SET last_check = %s, last_status_code = %s
-                    WHERE id = %s;
-                    """,
-                    (last_check, status_code, url_id)
-                )
-    return redirect(url_for('website', url_id=url_id))
+        
+        url.last_check = last_check
+        url.last_status_code = status_code
+        repo.update(url)
+
+    return redirect(url_for('website', url_id=url.id))
