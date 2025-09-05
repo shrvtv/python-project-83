@@ -7,10 +7,13 @@ import requests
 from dotenv import load_dotenv
 import psycopg2
 import page_analyzer.utils as utils
+from page_analyzer.classes import URLRepository
 from psycopg2.extras import NamedTupleCursor
 
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
+conn = psycopg2.connect(DATABASE_URL)
+repo = URLRepository(conn)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
@@ -59,31 +62,17 @@ def website(url_id):
 
 @app.post("/urls")
 def add_url():
-    url = request.form.get('url')
-    if not (is_valid_url(url) and len(url) <= 255):
+    name = request.form.get('url')
+    if not (is_valid_url(name) and len(name) <= 255):
         flash("Некорректный URL", "danger")
-        return render_template("index.html", url=url), 422
-
-    with psycopg2.connect(DATABASE_URL) as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT id FROM urls WHERE name = %s;", (url,))
-            row = cur.fetchone()
-        if row:
-            url_id = row[0]
-            flash("Страница уже существует", "info")
-        else:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    INSERT INTO urls (name)
-                    VALUES (%s)
-                    RETURNING id;
-                    """,
-                    (url,)
-                )
-                url_id = cur.fetchone()[0]
-            flash("Страница успешно добавлена", "success")
-
-    return redirect(url_for("website", url_id=url_id))
+        return render_template("index.html", url=name), 422
+    url = repo.find_by_name(name)
+    if url:
+        flash("Страница уже существует", "info")
+    else:
+        url = repo.save(url)
+        flash("Страница успешно добавлена", "success")
+    return redirect(url_for("website", url_id=url.id))
 
 
 @app.post('/urls/<int:url_id>/checks')
