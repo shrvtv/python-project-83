@@ -25,32 +25,26 @@ def index():
 
 @app.get("/urls")
 def urls():
-    urls = repo.get_all_urls()()
+    urls = repo.get_all_urls()
     return render_template("urls.html", urls=urls)
 
 
 @app.route("/urls/<int:url_id>")
 def website(url_id):
-    with psycopg2.connect(DATABASE_URL) as conn:
-        with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
-            cur.execute(
-                "SELECT id, name, created_at FROM urls WHERE id = %s;",
-                (url_id,)
-            )
-            row = cur.fetchone()
-        if row is None:
-            abort(404)
-        with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
-            cur.execute("""
-                SELECT id, url_id, status_code, h1,
-                       title, description, created_at
-                FROM url_checks WHERE url_id = %s
-                ORDER BY id DESC;
-                """,
-                (url_id,)
-            )
-            checks = cur.fetchall()
-    return render_template("website.html", website=row, checks=checks)
+    url = repo.find_by_id(url_id)
+    if url is None:
+        abort(404)
+    with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+        cur.execute("""
+            SELECT id, url_id, status_code, h1,
+                   title, description, created_at
+            FROM url_checks WHERE url_id = %s
+            ORDER BY id DESC;
+            """,
+            (url_id,)
+        )
+        checks = cur.fetchall()
+    return render_template("website.html", website=url, checks=checks)
 
 
 @app.post("/urls")

@@ -18,7 +18,7 @@
           {{ url.id }}
         </td>
         <td>
-          <a href="{{ url_for('website', url_id=url.id) }}">{{ row.name }}</a>
+          <a href="{{ url_for('website', url_id=url.id) }}">{{ url.name }}</a>
         </td>
         <td>
           {{ url.last_check or '' }}

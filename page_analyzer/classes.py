@@ -1,6 +1,5 @@
 from psycopg2.extras import NamedTupleCursor
 
-
 class URL:
     def __init__(self, row):
         self.id = row.id
