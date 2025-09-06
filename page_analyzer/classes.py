@@ -1,5 +1,6 @@
 import page_analyzer.utils as utils
 
+
 class URL:
     def __init__(self, row):
         self.id = row.id

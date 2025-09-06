@@ -1,7 +1,7 @@
-import psycopg2
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
+import psycopg2
 from bs4 import BeautifulSoup
 from psycopg2.extras import NamedTupleCursor
 from validators.url import url as validate_url
