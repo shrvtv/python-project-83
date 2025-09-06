@@ -1,10 +1,10 @@
-from psycopg2.extras import NamedTupleCursor
-
+import page_analyzer.utils as utils
 
 class URL:
     def __init__(self, row):
         self.id = row.id
         self.name = row.name
+        self.created_at = row.created_at
         self.last_check = row.last_check
         self.last_status_code = row.last_status_code
 
@@ -21,24 +21,20 @@ class Check:
 
 
 class Repository:
-    def __init__(self, conn):
-        self.conn = conn
+    def __init__(self, dsn):
+        self.dsn = dsn
     
     def get_all_urls(self):
-        with self.conn, self.conn.cursor(
-            cursor_factory=NamedTupleCursor
-        ) as cur:
+        with utils.named_tuple_cursor(self.dsn) as cur:
             cur.execute("""
-                SELECT id, name, last_check, last_status_code
+                SELECT id, name, created_at, last_check, last_status_code
                 FROM urls
                 ORDER BY id DESC;
             """)
             return [URL(row) for row in cur.fetchall()]
 
     def get_all_checks(self, url_id):
-        with self.conn, self.conn.cursor(
-                cursor_factory=NamedTupleCursor
-        ) as cur:
+        with utils.named_tuple_cursor(self.dsn) as cur:
             cur.execute("""
                 SELECT id, url_id, status_code, h1,
                        title, description, created_at
@@ -51,9 +47,7 @@ class Repository:
             return [Check(row) for row in cur.fetchall()]
 
     def save_url(self, name):
-        with self.conn, self.conn.cursor(
-                cursor_factory=NamedTupleCursor
-        ) as cur:
+        with utils.named_tuple_cursor(self.dsn) as cur:
             cur.execute("""
                 INSERT INTO urls (name) VALUES (%s)
                 RETURNING id, name, created_at, last_check, last_status_code;
@@ -63,9 +57,7 @@ class Repository:
             return URL(cur.fetchone())
 
     def save_check(self, url_id, status_code, h1, title, description):
-        with self.conn, self.conn.cursor(
-                cursor_factory=NamedTupleCursor
-        ) as cur:
+        with utils.named_tuple_cursor(self.dsn) as cur:
             cur.execute("""
                 INSERT INTO url_checks
                     (url_id, status_code, h1, title, description)
@@ -78,11 +70,9 @@ class Repository:
             return Check(cur.fetchone())
 
     def find_url_by_name(self, name):
-        with self.conn, self.conn.cursor(
-                cursor_factory=NamedTupleCursor
-        ) as cur:
+        with utils.named_tuple_cursor(self.dsn) as cur:
             cur.execute("""
-                SELECT id, name, last_check, last_status_code
+                SELECT id, name, created_at, last_check, last_status_code
                 FROM urls
                 WHERE name = %s;
                 """,
@@ -92,11 +82,9 @@ class Repository:
             return URL(data) if data else None
     
     def find_url_by_id(self, url_id):
-        with self.conn, self.conn.cursor(
-                cursor_factory=NamedTupleCursor
-        ) as cur:
+        with utils.named_tuple_cursor(self.dsn) as cur:
             cur.execute("""
-                SELECT id, name, last_check, last_status_code
+                SELECT id, name, created_at, last_check, last_status_code
                 FROM urls
                 WHERE id = %s;
                 """,
@@ -105,7 +93,7 @@ class Repository:
             return URL(cur.fetchone())
         
     def update_url(self, url):
-        with self.conn, self.conn.cursor() as cur:
+        with utils.named_tuple_cursor(self.dsn) as cur:
             cur.execute("""
                 UPDATE urls
                 SET name = %s, last_check = %s, last_status_code = %s

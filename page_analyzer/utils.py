@@ -1,8 +1,22 @@
+import psycopg2
+from contextlib import contextmanager
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
+from psycopg2.extras import NamedTupleCursor
 from validators.url import url as validate_url
 
+
+@contextmanager
+def named_tuple_cursor(dsn: str):
+    conn = psycopg2.connect(dsn, sslmode="require")
+    try:
+        with conn:
+            with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+                yield cur
+    finally:
+        conn.close()
+                
 
 def is_valid_url(url: str) -> bool:
     if validate_url(url) and len(url) <= 255:
