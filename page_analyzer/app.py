@@ -7,13 +7,12 @@ import requests
 from dotenv import load_dotenv
 import psycopg2
 import page_analyzer.utils as utils
-from page_analyzer.classes import URLRepository
-from psycopg2.extras import NamedTupleCursor
+from page_analyzer.classes import Repository
 
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 conn = psycopg2.connect(DATABASE_URL)
-repo = URLRepository(conn)
+repo = Repository(conn)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
@@ -24,26 +23,17 @@ def index():
 
 
 @app.get("/urls")
-def urls():
+def get_urls():
     urls = repo.get_all_urls()
     return render_template("urls.html", urls=urls)
 
 
 @app.route("/urls/<int:url_id>")
 def website(url_id):
-    url = repo.find_by_id(url_id)
+    url = repo.find_url_by_id(url_id)
     if url is None:
         abort(404)
-    with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
-        cur.execute("""
-            SELECT id, url_id, status_code, h1,
-                   title, description, created_at
-            FROM url_checks WHERE url_id = %s
-            ORDER BY id DESC;
-            """,
-            (url_id,)
-        )
-        checks = cur.fetchall()
+    checks = repo.get_all_checks(url_id)
     return render_template("website.html", website=url, checks=checks)
 
 
@@ -53,18 +43,18 @@ def add_url():
     if not (is_valid_url(name) and len(name) <= 255):
         flash("Некорректный URL", "danger")
         return render_template("index.html", url=name), 422
-    url = repo.find_by_name(name)
+    url = repo.find_url_by_name(name)
     if url:
         flash("Страница уже существует", "info")
     else:
-        url = repo.save(name)
+        url = repo.save_url(name)
         flash("Страница успешно добавлена", "success")
     return redirect(url_for("website", url_id=url.id))
 
 
 @app.post('/urls/<int:url_id>/checks')
-def check(url_id):
-    url = repo.find_by_id(url_id)
+def make_check(url_id):
+    url = repo.find_url_by_id(url_id)
     try:
         r = requests.get(url.name)
         r.raise_for_status()
@@ -81,23 +71,12 @@ def check(url_id):
             attribute='content',
             required_attributes={
                 'name': 'description'
-            })
-
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    INSERT INTO url_checks
-                    (url_id, status_code, h1, title, description)
-                    VALUES (%s, %s, %s, %s, %s)
-                    RETURNING created_at;
-                    """,
-                    (url.id, status_code, h1, title, description)
-                )
-                flash("Страница успешно проверена", "success")
-                last_check = cur.fetchone()[0]
-        
-        url.last_check = last_check
-        url.last_status_code = status_code
-        repo.update(url)
+            }
+        )
+        check = repo.save_check(url_id, status_code, h1, title, description)
+        flash("Страница успешно проверена", "success")
+        url.last_check = check.created_at
+        url.last_status_code = check.status_code
+        repo.update_url(url)
 
     return redirect(url_for('website', url_id=url.id))
