@@ -9,7 +9,7 @@ from validators.url import url as validate_url
 
 @contextmanager
 def named_tuple_cursor(dsn: str):
-    conn = psycopg2.connect(dsn, sslmode="require")
+    conn = psycopg2.connect(dsn)
     try:
         with conn:
             with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
