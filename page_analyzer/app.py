@@ -1,10 +1,18 @@
-from flask import (
-    Flask, render_template, request, redirect, url_for, abort, flash
-)
 import os
+
+import psycopg2
 import requests
 from dotenv import load_dotenv
-import psycopg2
+from flask import (
+    Flask,
+    abort,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+
 import page_analyzer.utils as utils
 from page_analyzer.classes import Repository
 

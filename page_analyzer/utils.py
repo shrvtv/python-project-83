@@ -1,12 +1,14 @@
-from validators.url import url as validate_url
 from urllib.parse import urlparse
+
 from bs4 import BeautifulSoup
+from validators.url import url as validate_url
 
 
 def is_valid_url(url: str) -> bool:
     if validate_url(url) and len(url) <= 255:
         return True
     return False
+
 
 def clean_url(url: str) -> str:
     url_parts = urlparse(url)
@@ -22,7 +24,9 @@ def extract_tag_value(raw_html, tag):
     return tag_value
 
 
-def extract_tag_attribute_value(raw_html, tag, attribute, required_attributes=None):
+def extract_tag_attribute_value(
+        raw_html, tag, attribute, required_attributes=None
+):
     if required_attributes is None:
         required_attributes = {}
     parsed_html = BeautifulSoup(raw_html, 'html.parser')
