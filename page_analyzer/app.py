@@ -1,7 +1,6 @@
 from flask import (
     Flask, render_template, request, redirect, url_for, abort, flash
 )
-from validators.url import url as is_valid_url
 import os
 import requests
 from dotenv import load_dotenv
@@ -40,9 +39,10 @@ def website(url_id):
 @app.post("/urls")
 def add_url():
     name = request.form.get('url')
-    if not (is_valid_url(name) and len(name) <= 255):
+    if not utils.is_valid_url(name):
         flash("Некорректный URL", "danger")
         return render_template("index.html", url=name), 422
+    name = utils.clean_url(name)
     url = repo.find_url_by_name(name)
     if url:
         flash("Страница уже существует", "info")
