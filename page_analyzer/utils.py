@@ -1,19 +1,19 @@
 from contextlib import contextmanager
+from typing import Iterator
 from urllib.parse import urlparse
 
 import psycopg2
 from bs4 import BeautifulSoup
-from typing import Iterator
-from psycopg2.extras import NamedTupleCursor
+from psycopg2.extras import DictCursor
 from validators.url import url as validate_url
 
 
 @contextmanager
-def named_tuple_cursor(dsn: str) -> Iterator[NamedTupleCursor]:
+def dict_cursor(dsn: str) -> Iterator[DictCursor]:
     conn = psycopg2.connect(dsn)
     try:
         with conn:
-            with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+            with conn.cursor(cursor_factory=DictCursor) as cur:
                 yield cur
     finally:
         conn.close()

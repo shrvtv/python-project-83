@@ -1,42 +1,45 @@
-import page_analyzer.utils as utils
+import datetime
+from dataclasses import dataclass
 from typing import Final
 
+import page_analyzer.utils as utils
 
+
+@dataclass(slots=True)
 class URL:
-    def __init__(self, row):
-        self.id = row.id
-        self.name = row.name
-        self.created_at = row.created_at
-        self.last_check = row.last_check
-        self.last_status_code = row.last_status_code
+    id: Final[int]
+    name: Final[str]
+    created_at: Final[datetime.date]
+    last_check: datetime.date
+    last_status_code: int
 
 
+@dataclass(frozen=True, slots=True)
 class Check:
-    def __init__(self, row):
-        self.id = row.id
-        self.url_id = row.url_id
-        self.status_code = row.status_code
-        self.h1 = row.h1
-        self.title = row.title
-        self.description = row.description
-        self.created_at = row.created_at
+    id: int
+    url_id: int
+    status_code: int
+    h1: str | None
+    title: str | None
+    description: str | None
+    created_at: datetime.date
 
 
 class Repository:
     def __init__(self, dsn: str) -> None:
-        self.dsn : Final[str] = dsn
+        self.dsn: Final[str] = dsn
     
-    def get_all_urls(self):
-        with utils.named_tuple_cursor(self.dsn) as cur:
+    def get_all_urls(self) -> list[URL]:
+        with utils.dict_cursor(self.dsn) as cur:
             cur.execute("""
                 SELECT id, name, created_at, last_check, last_status_code
                 FROM urls
                 ORDER BY id DESC;
             """)
-            return [URL(row) for row in cur.fetchall()]
+            return [URL(**row) for row in cur.fetchall()]
 
-    def get_all_checks(self, url_id):
-        with utils.named_tuple_cursor(self.dsn) as cur:
+    def get_all_checks(self, url_id: int) -> list[Check]:
+        with utils.dict_cursor(self.dsn) as cur:
             cur.execute("""
                 SELECT id, url_id, status_code, h1,
                        title, description, created_at
@@ -46,20 +49,27 @@ class Repository:
                 """,
                 (url_id,)
             )
-            return [Check(row) for row in cur.fetchall()]
+            return [Check(**row) for row in cur.fetchall()]
 
-    def save_url(self, name):
-        with utils.named_tuple_cursor(self.dsn) as cur:
+    def save_url(self, name: str) -> URL:
+        with utils.dict_cursor(self.dsn) as cur:
             cur.execute("""
                 INSERT INTO urls (name) VALUES (%s)
                 RETURNING id, name, created_at, last_check, last_status_code;
                 """,
                 (name,)
             )
-            return URL(cur.fetchone())
+            return URL(**cur.fetchone())
 
-    def save_check(self, url_id, status_code, h1, title, description):
-        with utils.named_tuple_cursor(self.dsn) as cur:
+    def save_check(
+        self,
+        url_id: int,
+        status_code: int,
+        h1: str | None,
+        title: str | None,
+        description: str | None
+    ) -> Check:
+        with utils.dict_cursor(self.dsn) as cur:
             cur.execute("""
                 INSERT INTO url_checks
                     (url_id, status_code, h1, title, description)
@@ -69,10 +79,10 @@ class Repository:
                 """,
                 (url_id, status_code, h1, title, description)
             )
-            return Check(cur.fetchone())
+            return Check(**cur.fetchone())
 
-    def find_url_by_name(self, name):
-        with utils.named_tuple_cursor(self.dsn) as cur:
+    def find_url_by_name(self, name: str) -> URL | None:
+        with utils.dict_cursor(self.dsn) as cur:
             cur.execute("""
                 SELECT id, name, created_at, last_check, last_status_code
                 FROM urls
@@ -81,10 +91,10 @@ class Repository:
                 (name,)
             )
             data = cur.fetchone()
-            return URL(data) if data else None
+            return URL(**data) if data else None
     
-    def find_url_by_id(self, url_id):
-        with utils.named_tuple_cursor(self.dsn) as cur:
+    def find_url_by_id(self, url_id: int) -> URL | None:
+        with utils.dict_cursor(self.dsn) as cur:
             cur.execute("""
                 SELECT id, name, created_at, last_check, last_status_code
                 FROM urls
@@ -92,10 +102,11 @@ class Repository:
                 """,
                 (url_id,)
             )
-            return URL(cur.fetchone())
+            data = cur.fetchone()
+            return URL(**data) if data else None
         
-    def update_url(self, url):
-        with utils.named_tuple_cursor(self.dsn) as cur:
+    def update_url(self, url: URL) -> None:
+        with utils.dict_cursor(self.dsn) as cur:
             cur.execute("""
                 UPDATE urls
                 SET name = %s, last_check = %s, last_status_code = %s
@@ -103,4 +114,3 @@ class Repository:
                 """,
                 (url.name, url.last_check, url.last_status_code, url.id)
             )
-        return None
