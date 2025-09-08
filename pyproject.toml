@@ -11,7 +11,6 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "python-dotenv>=1.1.1",
     "requests>=2.32.5",
-    "ruff>=0.12.10",
     "validators>=0.35.0",
 ]
 
@@ -22,3 +21,9 @@ indent-width = 4
 [tool.ruff.lint]
 preview = true
 select = ["E", "F", "I", "C90"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+    "ruff>=0.12.12",
+]
