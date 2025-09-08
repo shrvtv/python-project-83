@@ -3,12 +3,13 @@ from urllib.parse import urlparse
 
 import psycopg2
 from bs4 import BeautifulSoup
+from typing import Iterator
 from psycopg2.extras import NamedTupleCursor
 from validators.url import url as validate_url
 
 
 @contextmanager
-def named_tuple_cursor(dsn: str):
+def named_tuple_cursor(dsn: str) -> Iterator[NamedTupleCursor]:
     conn = psycopg2.connect(dsn)
     try:
         with conn:
@@ -29,7 +30,7 @@ def clean_url(url: str) -> str:
     return f"{url_parts.scheme}://{url_parts.hostname}"
 
 
-def extract_tag_value(raw_html, tag):
+def extract_tag_value(raw_html: str, tag: str) -> str:
     parsed_html = BeautifulSoup(raw_html, 'html.parser')
     try:
         tag_value = parsed_html.find(tag).string
@@ -39,8 +40,11 @@ def extract_tag_value(raw_html, tag):
 
 
 def extract_tag_attribute_value(
-        raw_html, tag, attribute, required_attributes=None
-):
+        raw_html: str,
+        tag: str,
+        attribute: str,
+        required_attributes: dict[str, str] | None = None
+) -> str | None:
     if required_attributes is None:
         required_attributes = {}
     parsed_html = BeautifulSoup(raw_html, 'html.parser')

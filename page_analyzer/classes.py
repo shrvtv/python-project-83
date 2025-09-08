@@ -1,4 +1,5 @@
 import page_analyzer.utils as utils
+from typing import Final
 
 
 class URL:
@@ -22,8 +23,8 @@ class Check:
 
 
 class Repository:
-    def __init__(self, dsn):
-        self.dsn = dsn
+    def __init__(self, dsn: str) -> None:
+        self.dsn : Final[str] = dsn
     
     def get_all_urls(self):
         with utils.named_tuple_cursor(self.dsn) as cur:
