@@ -33,7 +33,7 @@ def clean_url(url: str) -> str:
     return f"{url_parts.scheme}://{url_parts.hostname}"
 
 
-def extract_tag_value(raw_html: str, tag: str) -> str:
+def extract_tag_value(raw_html: str, tag: str) -> str | None:
     """Extract tag value from raw HTML string."""
     parsed_html = BeautifulSoup(raw_html, 'html.parser')
     try:
