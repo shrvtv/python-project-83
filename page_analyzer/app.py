@@ -17,9 +17,14 @@ from page_analyzer.classes import Repository
 
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
+if not DATABASE_URL:
+    raise ValueError('DATABASE_URL is missing')
 repo = Repository(DATABASE_URL)
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError('SECRET_KEY is missing')
+app.config['SECRET_KEY'] = SECRET_KEY
 
 
 @app.route("/")
