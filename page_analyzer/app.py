@@ -62,7 +62,15 @@ def add_url():
 def make_check(url_id):
     url = repo.find_url_by_id(url_id)
     try:
-        r = requests.get(url.name)
+        r = requests.get(
+            url.name,
+            timeout=10,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                              "AppleWebKit/537.36 (KHTML, like Gecko) "
+                              "Chrome/87.0.4280.66 Safari/537.36"
+            }
+        )
         r.raise_for_status()
     except requests.exceptions.RequestException:
         flash("Произошла ошибка при проверке", "danger")
